@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 
 require('electron-reload')(__dirname, {
@@ -6,6 +6,14 @@ require('electron-reload')(__dirname, {
 })
 
 let win
+
+ipcMain.on('greet', (event, args) => {
+  console.log(args)
+
+  event.sender.send('greet', {
+    message: 'hi renderer ~'
+  })
+})
 
 const createWindow = () => {
     win = new BrowserWindow({
@@ -17,6 +25,22 @@ const createWindow = () => {
     })
 
     win.loadURL(`file://${__dirname}/main.html`)
+
+    win.on('closed', () => {
+      win = null
+    })
 }
 
 app.on('ready', createWindow)
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('activate', () => {
+  if (win === null) {
+    createWindow()
+  }
+})
